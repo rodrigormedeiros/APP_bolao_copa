@@ -1,0 +1,6 @@
+bolao_familia_medeiros.db
+bolao_familia_medeiros.db-*
+backups/
+__pycache__/
+*.pyc
+history-points-preview.png

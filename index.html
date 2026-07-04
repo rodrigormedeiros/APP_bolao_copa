@@ -1,0 +1,251 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Bolão da família Medeiros</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">Copa do Mundo 2026</p>
+          <h1>Bolão da família Medeiros</h1>
+        </div>
+        <div class="score-card">
+          <span class="score-value" id="matchCount">72</span>
+          <span class="score-label" id="matchProgress">0% dos jogos</span>
+        </div>
+      </header>
+
+      <nav class="tabs" aria-label="Navegação principal">
+        <button class="tab active" type="button" data-view="dashboard">Classificação</button>
+        <button class="tab" type="button" data-view="history">Histórico</button>
+        <button class="tab" type="button" data-view="rules">Regras</button>
+        <button class="tab" type="button" data-view="participants">Participantes</button>
+        <button class="tab" type="button" data-view="predictions">Palpites</button>
+        <button class="tab" type="button" data-view="results">Resultados reais</button>
+      </nav>
+
+      <main>
+        <section class="view active" id="dashboard">
+          <div class="section-head">
+            <div>
+              <p class="eyebrow">Pontuação automática</p>
+              <h2>Classificação geral</h2>
+            </div>
+            <div class="rules">
+              <span>Desempate: mais novo</span>
+            </div>
+          </div>
+          <p class="source-note">
+            Tabela da primeira fase baseada no calendário oficial da
+            <a href="https://www.fifa.com/pt/tournaments/mens/worldcup/canadamexicousa2026/articles/copa-mundo-2026-tabela-jogos" target="_blank" rel="noreferrer">FIFA</a>.
+          </p>
+          <div class="leaderboard" id="leaderboard"></div>
+          <div class="two-column">
+            <div class="panel">
+              <h3>Resumo</h3>
+              <div class="summary-grid" id="summaryGrid"></div>
+            </div>
+            <div class="panel">
+              <h3>Banco SQLite</h3>
+              <div class="backup-actions">
+                <button class="secondary" type="button" id="exportData">Exportar dados</button>
+                <label class="file-button">
+                  Importar dados
+                  <input type="file" id="importData" accept="application/json">
+                </label>
+                <button class="secondary" type="button" id="restoreBackup">Restaurar último backup</button>
+                <button class="danger" type="button" id="clearData">Limpar bolão</button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="view" id="history">
+          <div class="section-head">
+            <div>
+              <p class="eyebrow">Evolução</p>
+              <h2>Histórico da classificação</h2>
+            </div>
+          </div>
+          <div class="history-panel">
+            <div class="history-modes" aria-label="Tipo de gráfico do histórico">
+              <button class="history-mode active" type="button" data-history-mode="rank">Colocação</button>
+              <button class="history-mode" type="button" data-history-mode="points">Pontos</button>
+            </div>
+            <canvas id="historyChart" width="1100" height="420"></canvas>
+            <div class="history-legend" id="historyLegend"></div>
+          </div>
+        </section>
+
+        <section class="view" id="rules">
+          <div class="section-head">
+            <div>
+              <p class="eyebrow">Como pontuamos</p>
+              <h2>Regras do bol&atilde;o</h2>
+            </div>
+          </div>
+          <p class="source-note">A fase de grupos j&aacute; est&aacute; em andamento. Os jogos do mata-mata ser&atilde;o cadastrados quando as sele&ccedil;&otilde;es classificadas forem definidas.</p>
+          <div class="rules-grid">
+            <article class="rules-panel">
+              <div class="rules-panel-head">
+                <p class="eyebrow">Primeira fase</p>
+                <h3>Fase de grupos</h3>
+              </div>
+              <div class="rule-item">
+                <strong>10 pts</strong>
+                <span>Acertar o placar exato.</span>
+              </div>
+              <div class="rule-item">
+                <strong>5 pts</strong>
+                <span>Acertar o vencedor ou o empate.</span>
+              </div>
+            </article>
+
+            <article class="rules-panel">
+              <div class="rules-panel-head">
+                <p class="eyebrow">Eliminat&oacute;ria</p>
+                <h3>Mata-mata</h3>
+              </div>
+              <p class="rules-intro">O placar do palpite considera tempo normal e prorroga&ccedil;&atilde;o. A disputa de p&ecirc;naltis n&atilde;o entra no placar; ela s&oacute; define o classificado.</p>
+              <div class="rule-item">
+                <strong>20 pts</strong>
+                <span>Acertar o placar exato ap&oacute;s 120 minutos, mesmo que haja p&ecirc;naltis.</span>
+              </div>
+              <div class="rule-item">
+                <strong>10 pts</strong>
+                <span>Acertar o desfecho ap&oacute;s 120 minutos: vencedor ou empate.</span>
+              </div>
+              <div class="rule-item">
+                <strong>8 pts</strong>
+                <span>Acertar o classificado nos p&ecirc;naltis, mas errar o placar ap&oacute;s 120 minutos.</span>
+              </div>
+              <p class="rules-example">Exemplo: palpite 2 x 2 e jogo 1 x 1 ap&oacute;s a prorroga&ccedil;&atilde;o vale 10 pts; se o placar tamb&eacute;m for 2 x 2, vale 20 pts.</p>
+            </article>
+          </div>
+        </section>
+
+        <section class="view" id="participants">
+          <div class="section-head">
+            <div>
+              <p class="eyebrow">Cadastro</p>
+              <h2>Participantes</h2>
+            </div>
+          </div>
+          <form class="form-row" id="participantForm">
+            <input type="hidden" id="participantId">
+            <label>
+              Nome
+              <input id="participantName" name="name" type="text" placeholder="Ex.: Ana Medeiros" required>
+            </label>
+            <label>
+              Data de nascimento
+              <input id="participantBirthdate" name="birthdate" type="date" required>
+            </label>
+            <label>
+              Cor preferida
+              <input id="participantColor" name="favoriteColor" type="color" value="#12694f" required>
+            </label>
+            <button type="submit" id="participantSubmit">Adicionar</button>
+            <button class="secondary hidden" type="button" id="cancelEdit">Cancelar</button>
+          </form>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Nome</th>
+                  <th>Nascimento</th>
+                  <th>Idade</th>
+                  <th>Cor</th>
+                  <th>Ações</th>
+                </tr>
+              </thead>
+              <tbody id="participantsTable"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="view" id="predictions">
+          <div class="prediction-fixed">
+            <div class="section-head">
+              <div>
+                <p class="eyebrow">Cadastro</p>
+                <h2>Palpites</h2>
+              </div>
+              <div class="participant-picker" id="participantPicker">
+                <button class="participant-picker-button" type="button" id="participantPickerButton" aria-haspopup="listbox" aria-expanded="false"></button>
+                <div class="participant-picker-menu hidden" id="participantPickerMenu" role="listbox" aria-label="Participante dos palpites"></div>
+                <select class="hidden" id="predictionParticipant" aria-label="Participante dos palpites"></select>
+              </div>
+            </div>
+            <div class="match-filters">
+              <input id="predictionSearch" type="search" placeholder="Buscar seleção, grupo ou estádio">
+              <select id="predictionGroup" aria-label="Filtrar grupo"></select>
+            </div>
+          </div>
+          <div class="matches-list scroll-list" id="predictionMatches"></div>
+        </section>
+
+        <section class="view" id="results">
+          <div class="results-fixed">
+            <div class="section-head">
+              <div>
+                <p class="eyebrow">Pós-jogo</p>
+                <h2>Resultado real</h2>
+              </div>
+            </div>
+            <div class="match-filters">
+              <input id="resultSearch" type="search" placeholder="Buscar seleção, grupo ou estádio">
+              <select id="resultGroup" aria-label="Filtrar grupo"></select>
+            </div>
+          </div>
+          <div class="matches-list scroll-list" id="resultMatches"></div>
+        </section>
+      </main>
+    </div>
+
+    <div class="face-modal hidden" id="faceModal" role="dialog" aria-modal="true" aria-labelledby="faceModalTitle">
+      <div class="face-dialog">
+        <div class="face-dialog-head">
+          <div>
+            <p class="eyebrow">Foto da família</p>
+            <h2 id="faceModalTitle">Escolha o rosto</h2>
+            <p class="face-help">Clique no centro do rosto para posicionar o círculo.</p>
+          </div>
+          <button class="secondary" type="button" id="skipFaceSelection">Depois</button>
+          <button class="icon-close" type="button" id="closeFaceModal" aria-label="Fechar">×</button>
+        </div>
+        <div class="family-photo-wrap">
+          <img src="assets/familia.jpeg" alt="Família Medeiros" class="family-photo">
+          <div class="face-hotspots" id="faceHotspots"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="face-modal hidden" id="predictionModal" role="dialog" aria-modal="true" aria-labelledby="predictionModalTitle">
+      <div class="prediction-dialog">
+        <div class="prediction-dialog-head">
+          <div>
+            <p class="eyebrow">Palpites cadastrados</p>
+            <h2 id="predictionModalTitle">Palpites do jogo</h2>
+            <p class="prediction-modal-subtitle" id="predictionModalSubtitle"></p>
+          </div>
+          <button class="icon-close" type="button" id="closePredictionModal" aria-label="Fechar">×</button>
+        </div>
+        <div class="prediction-list" id="predictionModalList"></div>
+      </div>
+    </div>
+
+    <template id="emptyStateTemplate">
+      <div class="empty-state">
+        <strong></strong>
+        <p></p>
+      </div>
+    </template>
+
+    <script src="app.js"></script>
+  </body>
+</html>
