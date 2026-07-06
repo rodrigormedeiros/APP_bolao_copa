@@ -96,7 +96,7 @@ const matches = [
   { id: 95, group: "Oitavas", phase: "knockout", date: "2026-07-07", time: "13:00 BRT", stadium: "Atlanta", home: "Argentina", away: "Egito" },
   { id: 96, group: "Oitavas", phase: "knockout", date: "2026-07-07", time: "17:00 BRT", stadium: "Vancouver", home: "Suica", away: "Colombia" },
   { id: 97, group: "Quartas", phase: "knockout", date: "2026-07-09", time: "17:00 BRT", stadium: "Boston", home: "Franca", away: "Marrocos" },
-  { id: 98, group: "Quartas", phase: "knockout", date: "2026-07-10", time: "16:00 BRT", stadium: "Los Angeles", home: "Vencedor Jogo 93", away: "Vencedor Jogo 94" },
+  { id: 98, group: "Quartas", phase: "knockout", date: "2026-07-10", time: "16:00 BRT", stadium: "Los Angeles", home: "Espanha", away: "Vencedor Jogo 94" },
   { id: 99, group: "Quartas", phase: "knockout", date: "2026-07-11", time: "18:00 BRT", stadium: "Miami", home: "Noruega", away: "Inglaterra" },
   { id: 100, group: "Quartas", phase: "knockout", date: "2026-07-11", time: "22:00 BRT", stadium: "Kansas City", home: "Vencedor Jogo 95", away: "Vencedor Jogo 96" },
   { id: 101, group: "Semis", phase: "knockout", date: "2026-07-14", time: "16:00 BRT", stadium: "Dallas", home: "Vencedor Jogo 97", away: "Vencedor Jogo 98" },
