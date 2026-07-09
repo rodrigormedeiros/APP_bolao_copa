@@ -161,7 +161,6 @@ const FLAG_CODES = {
 let state = normalizeState({});
 let historyMode = "rank";
 const KNOCKOUT_START_DATE = "2026-06-28";
-const KNOCKOUT_DIVIDER_OFFSET = 0.5;
 const LOCAL_STORAGE_KEY = "bolao-familia-medeiros-state";
 let sqliteAvailable = true;
 const dom = {};
@@ -645,7 +644,7 @@ function renderHistory() {
     return;
   }
 
-  const padding = { left: 58, right: 28, top: 42, bottom: 54 };
+  const padding = { left: 58, right: 28, top: 42, bottom: 72 };
   const chartW = width - padding.left - padding.right;
   const chartH = height - padding.top - padding.bottom;
   const timeline = historyTimeline(history.days);
@@ -690,10 +689,7 @@ function renderHistory() {
     });
   }
 
-  history.days.forEach((day, index) => {
-    const x = historyChartX(day, timeline, padding.left, chartW);
-    ctx.fillText(formatDate(day).slice(0, 5), x - 18, height - 22);
-  });
+  drawHistoryDateAxis(ctx, history.days, timeline, padding, chartW, height);
 
   drawPhaseDivider(ctx, timeline, padding, chartW, chartH);
 
@@ -751,20 +747,62 @@ function classificationHistory() {
 }
 
 function historyTimeline(days) {
-  const start = dateDayNumber(days[0]);
-  const end = Math.max(dateDayNumber(days.at(-1)), dateDayNumber(KNOCKOUT_START_DATE));
-  return { start, end, span: Math.max(1, end - start) };
+  const positions = new Map(days.map((day, index) => [day, index]));
+  return { days, positions, span: Math.max(1, days.length - 1) };
 }
 
 function historyChartX(day, timeline, left, chartWidth) {
-  return left + ((dateDayNumber(day) - timeline.start) / timeline.span) * chartWidth;
+  const index = timeline.positions.get(day) ?? 0;
+  return left + (index / timeline.span) * chartWidth;
+}
+
+function drawHistoryDateAxis(ctx, days, timeline, padding, chartWidth, height) {
+  ctx.save();
+  ctx.fillStyle = "#66736d";
+  ctx.textAlign = "center";
+  ctx.font = "12px Segoe UI, Arial";
+
+  days.forEach((day) => {
+    const x = historyChartX(day, timeline, padding.left, chartWidth);
+    ctx.fillText(day.slice(8, 10), x, height - 42);
+  });
+
+  const monthGroups = [];
+  days.forEach((day, index) => {
+    const monthKey = day.slice(0, 7);
+    const current = monthGroups.at(-1);
+    if (current?.month === monthKey) {
+      current.end = index;
+    } else {
+      monthGroups.push({ month: monthKey, start: index, end: index });
+    }
+  });
+
+  ctx.strokeStyle = "#d9e1dd";
+  ctx.lineWidth = 1;
+  ctx.font = "700 12px Segoe UI, Arial";
+  ctx.fillStyle = "#8a6214";
+  monthGroups.forEach((group) => {
+    const startX = padding.left + (group.start / timeline.span) * chartWidth;
+    const endX = padding.left + (group.end / timeline.span) * chartWidth;
+    const labelX = (startX + endX) / 2;
+    ctx.beginPath();
+    ctx.moveTo(startX, height - 31);
+    ctx.lineTo(endX, height - 31);
+    ctx.stroke();
+    ctx.fillText(monthLabel(group.month), labelX, height - 14);
+  });
+
+  ctx.restore();
 }
 
 function drawPhaseDivider(ctx, timeline, padding, chartWidth, chartHeight) {
-  const knockoutDay = dateDayNumber(KNOCKOUT_START_DATE) - KNOCKOUT_DIVIDER_OFFSET;
-  if (knockoutDay < timeline.start || knockoutDay > timeline.end) return;
+  const firstKnockoutIndex = timeline.days.findIndex((day) => day >= KNOCKOUT_START_DATE);
+  if (firstKnockoutIndex <= 0) return;
 
-  const x = padding.left + ((knockoutDay - timeline.start) / timeline.span) * chartWidth;
+  const previousX = padding.left + ((firstKnockoutIndex - 1) / timeline.span) * chartWidth;
+  const firstKnockoutX = padding.left + (firstKnockoutIndex / timeline.span) * chartWidth;
+  const x = (previousX + firstKnockoutX) / 2;
   ctx.save();
   ctx.setLineDash([7, 5]);
   ctx.strokeStyle = "#c8911d";
@@ -783,9 +821,23 @@ function drawPhaseDivider(ctx, timeline, padding, chartWidth, chartHeight) {
   ctx.restore();
 }
 
-function dateDayNumber(value) {
-  const [year, month, day] = value.split("-").map(Number);
-  return Date.UTC(year, month - 1, day) / 86400000;
+function monthLabel(value) {
+  const month = Number(value.slice(5, 7));
+  const labels = {
+    1: "janeiro",
+    2: "fevereiro",
+    3: "mar\u00e7o",
+    4: "abril",
+    5: "maio",
+    6: "junho",
+    7: "julho",
+    8: "agosto",
+    9: "setembro",
+    10: "outubro",
+    11: "novembro",
+    12: "dezembro"
+  };
+  return labels[month] || value;
 }
 
 function pointsAxisSteps(maxPoints) {
