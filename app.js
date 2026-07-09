@@ -95,10 +95,10 @@ const matches = [
   { id: 94, group: "Oitavas", phase: "knockout", date: "2026-07-06", time: "21:00 BRT", stadium: "Seattle", home: "Estados Unidos", away: "Belgica" },
   { id: 95, group: "Oitavas", phase: "knockout", date: "2026-07-07", time: "13:00 BRT", stadium: "Atlanta", home: "Argentina", away: "Egito" },
   { id: 96, group: "Oitavas", phase: "knockout", date: "2026-07-07", time: "17:00 BRT", stadium: "Vancouver", home: "Suica", away: "Colombia" },
-  { id: 97, group: "Quartas", phase: "knockout", date: "2026-07-09", time: "17:00 BRT", stadium: "Boston", home: "Franca", away: "Marrocos" },
-  { id: 98, group: "Quartas", phase: "knockout", date: "2026-07-10", time: "16:00 BRT", stadium: "Los Angeles", home: "Espanha", away: "Belgica" },
-  { id: 99, group: "Quartas", phase: "knockout", date: "2026-07-11", time: "18:00 BRT", stadium: "Miami", home: "Noruega", away: "Inglaterra" },
-  { id: 100, group: "Quartas", phase: "knockout", date: "2026-07-11", time: "22:00 BRT", stadium: "Kansas City", home: "Argentina", away: "Suica" },
+  { id: 97, group: "Quartas", phase: "knockout", date: "2026-07-09", time: "17:00 BRT", stadium: "Boston", home: "Vencedor Jogo 89", away: "Vencedor Jogo 90" },
+  { id: 98, group: "Quartas", phase: "knockout", date: "2026-07-10", time: "16:00 BRT", stadium: "Los Angeles", home: "Vencedor Jogo 93", away: "Vencedor Jogo 94" },
+  { id: 99, group: "Quartas", phase: "knockout", date: "2026-07-11", time: "18:00 BRT", stadium: "Miami", home: "Vencedor Jogo 91", away: "Vencedor Jogo 92" },
+  { id: 100, group: "Quartas", phase: "knockout", date: "2026-07-11", time: "22:00 BRT", stadium: "Kansas City", home: "Vencedor Jogo 95", away: "Vencedor Jogo 96" },
   { id: 101, group: "Semis", phase: "knockout", date: "2026-07-14", time: "16:00 BRT", stadium: "Dallas", home: "Vencedor Jogo 97", away: "Vencedor Jogo 98" },
   { id: 102, group: "Semis", phase: "knockout", date: "2026-07-15", time: "16:00 BRT", stadium: "Atlanta", home: "Vencedor Jogo 99", away: "Vencedor Jogo 100" },
   { id: 103, group: "Disputa 3\u00ba", phase: "knockout", date: "2026-07-18", time: "18:00 BRT", stadium: "Miami", home: "Perdedor Jogo 101", away: "Perdedor Jogo 102" },
@@ -806,7 +806,7 @@ function pointsAxisMax(maxPoints) {
 }
 
 function extractMarkup(participantId) {
-  const rows = matches
+  const rows = resolvedMatches()
     .filter((match) => !isCancelled(match.id))
     .sort((a, b) => compareMatchesByKickoff(b, a))
     .map((match) => {
@@ -956,7 +956,7 @@ function closeFaceModal() {
 }
 
 function openPredictionModal(matchId) {
-  const match = matches.find((item) => String(item.id) === String(matchId));
+  const match = getMatch(matchId);
   if (!match) return;
   const result = getResult(matchId);
   const hasOfficialResult = isResultComplete(matchId, result);
@@ -1088,6 +1088,9 @@ async function handleResultChange(event) {
   const input = event.target;
   const matchId = input.dataset.matchId;
   if (isCancelled(matchId)) return;
+  const previousResult = { ...getResult(matchId) };
+  const previousComplete = isResultComplete(matchId, previousResult);
+  const previousWinner = previousComplete ? matchWinnerSide(previousResult) : "";
   const card = input.closest(".match-card");
   const home = parseScore(card.querySelector('[data-side="home"]')?.value ?? "");
   const away = parseScore(card.querySelector('[data-side="away"]')?.value ?? "");
@@ -1100,7 +1103,17 @@ async function handleResultChange(event) {
   updatePenaltyFields(card, penaltiesEnabled);
   setScore(state.results, matchId, home, away, penHome, penAway);
   await saveState();
-  updateResultBadge(card, matchId);
+  const currentResult = getResult(matchId);
+  const currentComplete = isResultComplete(matchId, currentResult);
+  const currentWinner = currentComplete ? matchWinnerSide(currentResult) : "";
+  const bracketChanged = previousComplete !== currentComplete || previousWinner !== currentWinner;
+
+  if (bracketChanged) {
+    renderPredictionMatches();
+    renderResultMatches();
+  } else {
+    updateResultBadge(card, matchId);
+  }
   updateHeaderStats();
   renderDashboard();
   renderHistory();
@@ -1233,7 +1246,7 @@ function resetParticipantForm() {
 
 function filterMatches(search, group) {
   const query = normalize(search);
-  return matches
+  return resolvedMatches()
     .filter((match) => {
       const haystack = normalize(`${match.group} ${match.home} ${match.away} ${match.stadium}`);
       const matchesSearch = !query || haystack.includes(query);
@@ -1329,7 +1342,7 @@ function resultLabel(matchId) {
 }
 
 function activeMatches() {
-  return matches.filter((match) => !isCancelled(match.id));
+  return resolvedMatches().filter((match) => !isCancelled(match.id));
 }
 
 function isCancelled(matchId) {
@@ -1337,7 +1350,60 @@ function isCancelled(matchId) {
 }
 
 function getMatch(matchId) {
-  return matches.find((match) => String(match.id) === String(matchId));
+  const match = matches.find((item) => String(item.id) === String(matchId));
+  return match ? resolveMatch(match) : undefined;
+}
+
+function resolvedMatches() {
+  return matches.map((match) => resolveMatch(match));
+}
+
+function resolveMatch(match, seen = new Set()) {
+  return {
+    ...match,
+    home: resolveTeamSlot(match.home, seen),
+    away: resolveTeamSlot(match.away, seen)
+  };
+}
+
+function resolveTeamSlot(slot, seen = new Set()) {
+  const dependency = parseKnockoutDependency(slot);
+  if (!dependency || seen.has(dependency.matchId)) return slot;
+
+  const sourceMatch = matches.find((match) => String(match.id) === dependency.matchId);
+  if (!sourceMatch) return slot;
+
+  const result = getResult(dependency.matchId);
+  if (!isResultComplete(dependency.matchId, result)) return slot;
+
+  const winnerSide = matchWinnerSide(result);
+  if (!winnerSide) return slot;
+
+  const nextSeen = new Set(seen);
+  nextSeen.add(dependency.matchId);
+  const resolvedSource = resolveMatch(sourceMatch, nextSeen);
+
+  if (dependency.type === "winner") {
+    return winnerSide === "home" ? resolvedSource.home : resolvedSource.away;
+  }
+
+  return winnerSide === "home" ? resolvedSource.away : resolvedSource.home;
+}
+
+function parseKnockoutDependency(slot) {
+  const match = String(slot).match(/^(Vencedor|Perdedor) Jogo (\d+)$/);
+  if (!match) return null;
+  return {
+    type: match[1] === "Vencedor" ? "winner" : "loser",
+    matchId: match[2]
+  };
+}
+
+function matchWinnerSide(result) {
+  if (!hasBothScores(result)) return "";
+  if (result.home > result.away) return "home";
+  if (result.away > result.home) return "away";
+  return penaltyWinner(result);
 }
 
 function getPrediction(participantId, matchId) {
