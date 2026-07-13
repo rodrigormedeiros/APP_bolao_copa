@@ -1727,9 +1727,15 @@ function startOfToday() {
 }
 
 function scrollListToToday(list) {
-  const todayCard = list.querySelector(`[data-match-date="${todayKey()}"]`);
   const firstCard = list.querySelector("[data-match-date]");
-  list.scrollTop = todayCard && firstCard ? todayCard.offsetTop - firstCard.offsetTop : 0;
+  const targetCard = nextUpcomingCard(list);
+  list.scrollTop = targetCard && firstCard ? targetCard.offsetTop - firstCard.offsetTop : 0;
+}
+
+function nextUpcomingCard(list) {
+  const today = todayKey();
+  const cards = Array.from(list.querySelectorAll("[data-match-date]"));
+  return cards.find((card) => card.dataset.matchDate >= today) || null;
 }
 
 function getAge(birthdate) {
